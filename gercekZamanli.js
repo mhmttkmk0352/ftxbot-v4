@@ -65,7 +65,7 @@ while_process_false = () => {
             data["peak_point"] = price-((price/100)*parseFloat(process.argv[4]));
             console.log( {peak_point: data["peak_point"] } );
     
-            let alinan_coin_adedi = ftx_rest.dolar_getir( info.dolar, data["peak_point"].toFixed(6));
+            let alinan_coin_adedi = ftx_rest.dolar_getir( process.argv[5], data["peak_point"].toFixed(6));
             ftx_rest.short_sell(process.argv[5], data["peak_point"].toFixed(6), "sell", false).then(selled => {
                 setTimeout(() => {
                     data["process_id"] = selled.result.id;
@@ -99,8 +99,8 @@ gunlugu_getir = async() => {
                     let coin_listemde_var_mi =  coins.includes(cname);
                     if( coin_listemde_var_mi == true ){
                         if( !coin_dip_havuzu[ cname ] ){
-                            let dip_alim_siniri = gunluk_dipler[coin].lowPrice/1000*1001;
-                            let tepe_satim_siniri = gunluk_dipler[coin].highPrice/1000*999;
+                            let dip_alim_siniri = gunluk_dipler[coin].lowPrice/10000*10001;
+                            let tepe_satim_siniri = gunluk_dipler[coin].highPrice/10000*9999;
                             coin_dip_havuzu[ cname ] = { 
                                 dip:gunluk_dipler[coin].lowPrice,
                                 dip_alim_siniri:dip_alim_siniri,
@@ -125,30 +125,46 @@ coin_dip_alim_noktasinda_mi = async( anlik ) => {
                 if ( coin_dip_havuzu && Object.keys( coin_dip_havuzu ).length > 0 ){
                     for ( cname in coin_dip_havuzu ){
                         if ( anlik.market == cname && anlik_fiyat >= coin_dip_havuzu[cname].dip && anlik_fiyat <= coin_dip_havuzu[cname].dip_alim_siniri ){
-                            if ( islem_durum == 0 ){ // işlem bir kereliğine çalışsın
-                                islem_durum = 1;
-                                console.log("AL ->");
-                                console.log( {
-                                    market:anlik.market,
-                                    alim_fiyati: anlik_fiyat,
-                                    gercek_dip:coin_dip_havuzu[cname].dip,
-                                    gercek_tepe:coin_dip_havuzu[cname].tepe,
-                                    data:new Date()
+                    
+                                ftx_rest.any_proces_status(anlik.market).then(r=>{
+                                    if ( r == 0 ){
+                                     
+                                        console.log("AL ->");
+                                        console.log( {
+                                            market:anlik.market,
+                                            alim_fiyati: anlik_fiyat,
+                                            gercek_dip:coin_dip_havuzu[cname].dip,
+                                            gercek_tepe:coin_dip_havuzu[cname].tepe,
+                                            data:new Date()
+                                        });
+                                        process.argv[2] = "LONG";
+                                        process.argv[3] = anlik.market;
+                                        console.log(  process.argv );
+                                        while_process_false();
+                                        beep();
+                                    }
                                 });
-                                process.argv[2] = "LONG";
-                                process.argv[3] = anlik.market;
-                                console.log(  process.argv );
-                                while_process_false();
-                                beep();
-                            }
+
+                            
                         }
         
-                        /*
+                        
                         if ( anlik.market == cname && anlik_fiyat >= coin_dip_havuzu[cname].tepe_satim_siniri && anlik_fiyat <= coin_dip_havuzu[cname].tepe ){
-                            console.log("SAT ->");
-                            console.log( {market:anlik.market, satim_fiyati: anlik_fiyat, gercek_tepe:coin_dip_havuzu[cname].tepe, data:new Date()} );
+                            
+                            ftx_rest.any_proces_status(anlik.market).then(r=>{
+                                if ( r == 0 ){
+                                    console.log("SAT ->");
+                                    console.log( {market:anlik.market, satim_fiyati: anlik_fiyat, gercek_tepe:coin_dip_havuzu[cname].tepe, data:new Date()} );
+                                    process.argv[2] = "SHORT";
+                                    process.argv[3] = anlik.market;
+                                    console.log(  process.argv );
+                                    
+                                    while_process_false();
+                                }
+                            });
+
                         }
-                        */
+                        
                     }
                 }
                 resolve(1);
