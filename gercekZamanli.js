@@ -21,7 +21,7 @@ var coins = [
 
 coin_dip_havuzu = {}
 islem_durum = 0;
-
+oynanan_coinler = [];
 
 takibe_al = (ws, dizi) => {
     if ( dizi && dizi.length > 0 ) {
@@ -36,7 +36,6 @@ takibe_al = (ws, dizi) => {
 while_process_false = () => {
     //Just no process. We should get price
     data = {};
-
     ftx_rest.get_price().then( price => {
         data["price"] = price;
         if ( process.argv[2] == "LONG" ){
@@ -102,6 +101,7 @@ gunlugu_getir = async() => {
                             let dip_alim_siniri = gunluk_dipler[coin].lowPrice/10000*10001;
                             let tepe_satim_siniri = gunluk_dipler[coin].highPrice/10000*9999;
                             coin_dip_havuzu[ cname ] = { 
+                                btc_fiyat:"",
                                 dip:gunluk_dipler[coin].lowPrice,
                                 dip_alim_siniri:dip_alim_siniri,
                                 tepe:gunluk_dipler[coin].highPrice,
@@ -119,17 +119,33 @@ gunlugu_getir = async() => {
 
 coin_dip_alim_noktasinda_mi = async( anlik ) => {
     if ( anlik && anlik.data && anlik.data.length > 0 ){
+        
         let pr = new Promise( (resolve, reject) => {
             (async () => {
                 let anlik_fiyat = anlik.data[0].price;
                 if ( coin_dip_havuzu && Object.keys( coin_dip_havuzu ).length > 0 ){
+
+                    if ( anlik.market == "BTC-PERP" ){
+                        coin_dip_havuzu["BTC-PERP"].btc_fiyat = anlik_fiyat;
+                    }
+                    /*
+                    console.log({
+                        market:"BTC-PERP",
+                        fiyat: coin_dip_havuzu["BTC-PERP"].btc_fiyat,
+                        gercek_dip:coin_dip_havuzu["BTC-PERP"].dip,
+                        gercek_tepe:coin_dip_havuzu["BTC-PERP"].tepe,
+                        data:new Date()
+                    });
+                    */
+
                     for ( cname in coin_dip_havuzu ){
                         if ( anlik.market == cname && anlik_fiyat >= coin_dip_havuzu[cname].dip && anlik_fiyat <= coin_dip_havuzu[cname].dip_alim_siniri ){
-                    
+
+                            if ( oynanan_coinler.indexOf( anlik.market ) > -1 ){
                                 ftx_rest.any_proces_status(anlik.market).then(r=>{
-                                    if ( r == 0 ){
-                                     
+                                    if ( r == 0  ){
                                         console.log("AL ->");
+                                        
                                         console.log( {
                                             market:anlik.market,
                                             alim_fiyati: anlik_fiyat,
@@ -139,18 +155,16 @@ coin_dip_alim_noktasinda_mi = async( anlik ) => {
                                         });
                                         process.argv[2] = "LONG";
                                         process.argv[3] = anlik.market;
+                                        oynanan_coinler.push( anlik.market );
                                         console.log(  process.argv );
                                         while_process_false();
                                         beep();
                                     }
-                                });
-
-                            
+                             });
+                            }
                         }
-        
-                        
                         if ( anlik.market == cname && anlik_fiyat >= coin_dip_havuzu[cname].tepe_satim_siniri && anlik_fiyat <= coin_dip_havuzu[cname].tepe ){
-                            
+                            /*
                             ftx_rest.any_proces_status(anlik.market).then(r=>{
                                 if ( r == 0 ){
                                     console.log("SAT ->");
@@ -159,12 +173,12 @@ coin_dip_alim_noktasinda_mi = async( anlik ) => {
                                     process.argv[3] = anlik.market;
                                     console.log(  process.argv );
                                     
-                                    while_process_false();
+                                    //while_process_false();
                                 }
                             });
 
+                            */
                         }
-                        
                     }
                 }
                 resolve(1);
